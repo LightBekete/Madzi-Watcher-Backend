@@ -23,7 +23,7 @@ const seedEmployees = async () => {
           email: "terrence@madzi.com",
           phoneNumber: "0888000002",
           position: "Lecturer",
-          department: "Research",
+          department: "Water Treatment and Monitoring",
         },
         {
           firstName: "Grace",
