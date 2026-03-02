@@ -5,6 +5,7 @@ import connectDB from './config/db.mjs';
 import seedEmployees  from './seed/employeeSeeder.mjs'; 
 import authRoutes from './routes/authRoutes.mjs';
 import waterMonitorRoutes from './routes/waterMonitorRoutes.mjs';
+import waterQualityRoutes from './routes/waterQualityRoutes.mjs'
 import notificationRoutes from './routes/notificationRoutes.mjs';
 import { errorHandler } from './middleware/errorHandler.mjs';
 import cookieParser from 'cookie-parser';
@@ -12,6 +13,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { setupNotificationSocket } from './sockets/notificationSocket.mjs';
 import { socketMiddleware } from './middleware/socketMiddleware.mjs';
+//import { mqttService } from './services/mqttService.mjs';
 
 dotenv.config();
 
@@ -35,6 +37,9 @@ connectDB();
 // Seed database AFTER connection
 await seedEmployees();
 
+// Pass Socket.IO instance to MQTT service for real-time updates
+//mqttService.setSocketIo(io); 
+
 // ===== MIDDLEWARE IN CORRECT ORDER =====
 
 // 1. General middleware 
@@ -55,6 +60,7 @@ app.use(socketMiddleware(io));
 // 4. Regular routes
 app.use('/api/auth', authRoutes);
 app.use('/api/water-monitor', waterMonitorRoutes);
+app.use('/api/water-quality',waterQualityRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 

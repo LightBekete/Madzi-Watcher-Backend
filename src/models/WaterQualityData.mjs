@@ -1,6 +1,5 @@
 import mongoose from "mongoose"
 import { hashPassword } from "../utils/helpers.mjs"
-import Nrb from "../models/Nrb.mjs"
 
 const { Schema, model } = mongoose
 
