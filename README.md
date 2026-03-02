@@ -22,7 +22,7 @@ This platform supports water boards and treatment plants in Malawi by enabling r
 
 ## Project Structure
 
-```
+```Madzi-Watcher-Backend
 ├── LICENSE
 ├── package.json
 ├── package-lock.json
