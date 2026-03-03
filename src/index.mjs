@@ -13,6 +13,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { setupNotificationSocket } from './sockets/notificationSocket.mjs';
 import { socketMiddleware } from './middleware/socketMiddleware.mjs';
+import morgan from 'morgan';  
 //import { mqttService } from './services/mqttService.mjs';
 
 dotenv.config();
@@ -43,6 +44,7 @@ await seedEmployees();
 // ===== MIDDLEWARE IN CORRECT ORDER =====
 
 // 1. General middleware 
+app.use(morgan('dev')); // Logging middleware
 app.use(express.json()); // JSON parsing for all routes
 app.use(cookieParser());
 app.use(cors({

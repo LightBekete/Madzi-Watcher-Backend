@@ -2,7 +2,7 @@
 
 Madzi-Watcher-Backend is a Node.js and Express-based backend system designed to power an IoT-driven Automated Water Quality Monitoring Platform using ESP32 devices and an MQTT broker.
 
-The system collects real-time water quality parameters such as Turbidity, pH, TDS, Electrical Conductivity (EC), and Temperature from ESP32 devices deployed at water treatment facilities. Sensor data is transmitted through MQTT, processed by the backend, stored in MongoDB, and analyzed using Water Quality Index (WQI) computation.
+The system collects real-time water quality parameters such as Turbidity, pH, TDS and Electrical Conductivity (EC) from ESP32 devices deployed at water treatment facilities. Sensor data is transmitted through MQTT, processed by the backend, stored in MongoDB, and analyzed using Water Quality Index (WQI) computation.
 
 This platform supports water boards and treatment plants in Malawi by enabling real-time monitoring, automated alerts, and data-driven decision-making.
 
@@ -99,7 +99,6 @@ The backend calculates WQI using measured parameters:
 - pH
 - Total Dissolved Solids (TDS)
 - Electrical Conductivity (EC)
-- Temperature
 
 WQI Classification:
 
