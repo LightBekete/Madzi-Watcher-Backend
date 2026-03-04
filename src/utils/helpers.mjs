@@ -6,6 +6,8 @@ import sharp from "sharp";
 import crypto from "crypto"
 import WaterMonitor from "../models/WaterMonitors.mjs";
 
+const saltRounds = process.env.SALT_ROUNDS || 10; 
+
 
 // Capitalize first letter of a string
 export const capitalize = (str) => {
