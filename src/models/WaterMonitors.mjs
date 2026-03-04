@@ -36,12 +36,14 @@ const WaterMonitorSchema = new Schema({
         default: null,
     },
      location: {
-      type: String,
-      default: null,
-     },
-     assignedArea: {
-      type: String,
-      default: null,
+      assignedArea: {
+        type: String,
+        default: null,
+      },
+      district: {
+        type: String,
+        default: null,
+      }
      }  
 });
 

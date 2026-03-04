@@ -146,8 +146,8 @@ Create a `.env` file in the root directory and add the following:
 MONGO_URL_CLASTER=mongodb://localhost:27017/Madzi-Watcher
 MONGO_URI_CAMPUSS=mongodb://localhost:27017/Madzi-Watcher
 
-SUPER_ADMIN_EMAIL=superadmin@madzi.com
-SUPER_ADMIN_PASSWORD=superadminpassword
+SUPER_ADMIN_EMAIL=
+SUPER_ADMIN_PASSWORD=
 
 RESEND_API_KEY=
 
@@ -161,9 +161,12 @@ EMAIL_HOST=smtp.your-email-provider.com
 EMAIL_PORT=587
 
 MQTT_CLIENT_ID=madzi-watcher-backend-001
-MQTT_BROKER=mqtt://broker.hivemq.com
-MQTT_TOPIC_SENSOR=waterquality/sensor
-MQTT_TOPIC_CONTROL=waterquality/control
+MQTT_BROKER=
+MQTT_TOPIC_SENSOR=
+MQTT_TOPIC_CONTROL=
+MQTT_PORT=8883
+MQTT_USERNAME=
+MQTT_PASSWORD=
 ```
 
 ### 4. Run in Development Mode
@@ -198,8 +201,11 @@ Expected JSON payload example:
   "turbidity": 6.4,
   "pH": 7.2,
   "tds": 540,
-  "ec": 800,
-  "temperature": 26.5
+  "electricalConductivity": 800,
+  location: {
+    district:
+    treatmentPlantId:
+  }
 }
 ```
 

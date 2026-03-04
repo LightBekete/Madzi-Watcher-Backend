@@ -56,6 +56,10 @@ export const createSuperUser = async () => {
       user: employee._id,
       password: hashedPassword,
       role: "superadmin",
+      location: {
+        assignedArea: "Headquarters",
+        district: "Central District"
+      } 
     })
 
     console.log("Super admin account created:", superAdmin.email)

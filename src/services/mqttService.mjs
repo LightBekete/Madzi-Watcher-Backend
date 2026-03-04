@@ -48,6 +48,7 @@ mqttClient.on('message', async (topic, message) => {
 
     if (topic === MQTT_TOPIC_SENSOR) {
       const {
+        deviceId,
         turbidity,
         pH,
         tds,
@@ -68,6 +69,7 @@ mqttClient.on('message', async (topic, message) => {
       }
 
       const newReading = new WaterQualityData({
+        deviceId,
         turbidity,
         pH,
         tds,

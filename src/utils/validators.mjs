@@ -1,9 +1,13 @@
 import Joi from 'joi';
-import { upload } from './multerConfig.mjs';
 
 // USER VALIDATION
 export const registerWaterMonitorSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email().required(), 
+  role: Joi.string().valid('water_monitor').required(),
+  location: Joi.object({
+     assignedArea: Joi.string().required(),
+     district: Joi.string().required(),
+  }).required(),
   verificationSessionId: Joi.string().required(),
 
 });

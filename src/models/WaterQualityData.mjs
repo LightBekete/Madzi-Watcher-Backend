@@ -4,6 +4,7 @@ import { hashPassword } from "../utils/helpers.mjs"
 const { Schema, model } = mongoose
 
 const waterQualitySchema = new Schema({
+  deviceId: { type: String, required: true },
   pH: { type: Number, required: true },
   tds: { type: Number, required: true },
   electricalConductivity: { type: Number, required: true },
