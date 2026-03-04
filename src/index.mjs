@@ -14,7 +14,7 @@ import { Server } from 'socket.io';
 import { setupNotificationSocket } from './sockets/notificationSocket.mjs';
 import { socketMiddleware } from './middleware/socketMiddleware.mjs';
 import morgan from 'morgan';  
-import { mqttService } from './services/mqttService.mjs';
+//import { mqttService } from './services/mqttService.mjs';
 
 dotenv.config();
 
@@ -39,7 +39,7 @@ connectDB();
 await seedEmployees();
 
 // Pass Socket.IO instance to MQTT service for real-time updates
-mqttService.setSocketIo(io); 
+//mqttService.setSocketIo(io); 
 
 // ===== MIDDLEWARE IN CORRECT ORDER =====
 
