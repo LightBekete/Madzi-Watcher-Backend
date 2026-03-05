@@ -21,8 +21,33 @@ import mongoose from "mongoose"
 // Verify OTP
 export const verifyOtp = async (req, res, next) => {
   try {
+    const {loginSessionId, otp} = req.body
 
-    
+    if(!mongoose.Types.ObjectId.isValid(loginSessionId)) {
+      return res.status(400).json({status: "failed:", message: "Invalid login session "})
+    }
+    //verifying if the session  for otp exists and is pending
+    const session = await otp.findById(loginSessionId).populate("watermonitor")
+    if (!session || session.status !== "Pending") {
+      return res.status(400).json({status: "failed:", message: "Invalid or expired OTP"})
+    }
+    //checking if the otp matches the one in the session and if it is not expired
+    if(session.expiresAt < new Date()) {
+      session.status = "Expired"
+      await session.save()
+      return res.status(400).json({status: "failed:", message: "OTP has expired"})
+    }
+    if(session.code !== otp){
+      return res.status(400).json({status: "failed:", message: "Invalid OTP"})
+    }
+
+    session.status = "Used"
+    await session.save()
+
+    const accessToken = generateAccessToken(session.watermonitor)
+    const refreshToken = generateRefreshToken(session.watermonitor)
+    const decoded = verifyRefreshToken(refreshToken)
+
   } catch (error) {
     next(error);
     
