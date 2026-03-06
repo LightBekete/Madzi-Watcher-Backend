@@ -83,6 +83,30 @@ export const verifyOtp = async (req, res, next) => {
 // Register User
 export const registerUser = async (req, res, next) => {
   try {
+    const {verificationSessionId, email, location} = req.validatedData
+
+    if(!mongoose.Types.ObjectId.isValid(verificationSessionId)) {
+      return res.status(400).json({status: "failed:", message: "Invalid verification session"})
+    }
+    //checking if the verification session exists and is valid
+    const verificationSession = await IdentityVerificationSession.findById(verificationSessionId)
+
+    if(!verificationSession || verificationSession.status !== "Verified" || verificationSession.expiresAt < new Date()) {
+      return res.status(400).json({status: "failed:", message: "Expired verification session"})
+    }
+    //checking if the email is already in use
+    const existingUser = await WaterMonitors.findOne({email})
+    if(existingUser) {
+      return res.status(400).json({status: "failed:", message: "WaiterMonitor already registered"})
+    } 
+    //checking first if the employee to be registered as Watermonitor exists
+    const employee = await Employee.findOne({email})
+
+    if(!employee) {
+      return res.status(400).json({status: "failed:", message: "No employee found with the provided email"})
+    }
+
+
   
   } catch (error) {
     next(error);
