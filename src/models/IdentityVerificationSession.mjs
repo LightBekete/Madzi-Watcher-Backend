@@ -2,16 +2,13 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;                        
 const IdentityVerificationSessionSchema = new Schema(
   {
-    waterMonitor: {                 
+   waterMonitorId: {
         type: Schema.Types.ObjectId,
-        ref: "WaterMonitor",                    
-        required: true,     
+        ref: "WaterMonitor",
+        required: true,
+        index: true,
     },
-    employee: {                 
-        type: Schema.Types.ObjectId,                                        
-        ref: "Employee",
-        required: true, 
-    },                          
+                              
     status: {       
         type: String,       
         enum: ["pending", "verified", "failed"],    
