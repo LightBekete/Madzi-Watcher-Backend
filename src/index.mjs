@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/db.mjs'; 
 import seedEmployees  from './seed/employeeSeeder.mjs'; 
+import { seedWaterQuality } from './seed/waterQualitySeeder.mjs';
 import authRoutes from './routes/authRoutes.mjs';
 import waterMonitorRoutes from './routes/waterMonitorRoutes.mjs';
 import waterQualityRoutes from './routes/waterQualityRoutes.mjs'
@@ -37,7 +38,7 @@ connectDB();
 
 // Seed database AFTER connection
 await seedEmployees();
-
+await seedWaterQuality();
 // Pass Socket.IO instance to MQTT service for real-time updates
 //mqttService.setSocketIo(io); 
 

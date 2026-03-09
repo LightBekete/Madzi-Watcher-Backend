@@ -15,7 +15,7 @@ import { registerWaterMonitorSchema } from '../utils/validators.mjs';
 import { authenticateJWT } from '../middleware/authMiddleware.mjs';
 import { loginValidation,
   validateEmail,
-  validatePassword, 
+  resetPasswordSchema, 
   validateChangePassword
 } from '../utils/validators.mjs';
 import { checkRole } from '../middleware/roleMiddleware.mjs';
@@ -35,7 +35,7 @@ router.post('/refresh-token', refreshToken);
 
 // Password Management
 router.post('/request-reset', validateRequest(validateEmail), requestPasswordReset);
-router.post('/reset-password', validateRequest(validatePassword), resetPassword);
+router.post('/reset-password', validateRequest(resetPasswordSchema), resetPassword);
 router.post('/change-password', authenticateJWT, validateRequest(validateChangePassword),  changePassword);
 
 

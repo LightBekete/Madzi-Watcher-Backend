@@ -18,7 +18,6 @@ import IdentityVerificationSession from "../models/IdentityVerificationSession.m
 import RefreshToken from "../models/RefreshToken.mjs"
 import mongoose from "mongoose"
 import WaterMonitors from "../models/WaterMonitors.mjs"
-import { cookies } from "supertest"
 //import { AccessTokenInstance } from "twilio/lib/rest/verify/v2/service/accessToken"
 
 // Verify OTP

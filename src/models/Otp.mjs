@@ -8,6 +8,12 @@ const OtpSchema = new Schema(
       required: true,       
         index: true,                
     },
+    status: {
+      type: String, 
+      required: true,
+      enum: ["pending", "verified"], 
+      default: "pending" 
+    },
     code: {
       type: String,             
         required: true,         
