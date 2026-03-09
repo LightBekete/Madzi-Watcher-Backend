@@ -11,6 +11,13 @@ export const registerWaterMonitorSchema = Joi.object({
   verificationSessionId: Joi.string().required(),
 
 });
+
+export const resetPasswordSchema = Joi.object({
+  email: Joi.string().email().required(),
+  newPassword: Joi.string().required(),
+  confirmNewPassword: Joi.string().required()
+});
+
 //EMAIL VALIDATION
 export const validateEmail = Joi.object({
   email: Joi.string().email()
