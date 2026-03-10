@@ -1,3 +1,4 @@
+import { Message } from "twilio/lib/twiml/MessagingResponse"
 import WaterMonitor from "../models/WaterMonitors.mjs"
 import mongoose from "mongoose"
 
@@ -5,6 +6,24 @@ import mongoose from "mongoose"
 //logic to get all users
 export const getAllUsers = async (req,res,next)=> {
     try {
+
+      const getWaterMonitors = await WaterMonitor.find([])
+
+      if(!getWaterMonitors){
+         return res.status(401).json({
+          status: "failed",
+          message: "no user was found"
+         })
+          
+      
+      }
+
+      return res.status(200).json({
+        status: "success",
+        message: "user retuned sucessfully",
+        data: getWaterMonitors
+      })
+
     
     
   } catch (error) {
