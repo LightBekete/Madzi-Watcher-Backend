@@ -5,6 +5,22 @@ import mongoose from "mongoose"
 //logic to get all users
 export const getAllUsers = async (req,res,next)=> {
     try {
+
+      const getWaterMonitors = await WaterMonitor.find({});
+
+  if (getWaterMonitors.length === 0) {
+    return res.status(404).json({
+      status: "failed",
+      message: "No water monitors found"
+    });
+  }
+
+  return res.status(200).json({
+    status: "success",
+    message: "Users returned successfully",
+    data: getWaterMonitors
+  });
+
     
     
   } catch (error) {
