@@ -14,7 +14,7 @@ import {
 const router = express.Router();
 
 // Get all users (admin only)
-router.get('/', authenticateJWT, checkRole(['admin','superadmin','officer']), getAllUsers);
+router.get('/', authenticateJWT, checkRole(['admin','superAdmin','officer']), getAllUsers);
 // Get logged-in user's profile
 router.get('/me/profile', authenticateJWT, getMyProfile);
 // Get a specific user by ID (admin or provider)
