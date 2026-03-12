@@ -70,7 +70,30 @@ export const getUserById = async (req,res, next)=> {
 //logic to get profile
 export const getMyProfile = async (req,res,next)=> {
     try {
-    
+
+      const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        status: "failed",
+        message: "Unauthorized. User not identified."
+      });
+    }
+
+    const user = await WaterMonitor.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        status: "failed",
+        message: "User profile not found"
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Profile retrieved successfully",
+      data: user
+    });
     
   } catch (error) {
     next(error);
