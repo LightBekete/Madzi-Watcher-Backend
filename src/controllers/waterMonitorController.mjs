@@ -158,7 +158,7 @@ export const deleteUser = async (req,res)=> {
       });
     }
 
-    // Delete the user
+    // Delete user
     const deletedUser = await WaterMonitor.findByIdAndDelete(id);
 
     if (!deletedUser) {
@@ -190,7 +190,56 @@ export const deleteUser = async (req,res)=> {
 //promote user
 export const promoteUser = async (req, res, next) => {
     try {
-    
+    const { id } = req.params;
+    const { newRole } = req.body; // e.g., "admin" or "superadmin"
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Invalid user ID"
+      });
+    }
+
+    // Validate role input
+    const allowedRoles = ["officer", "admin", "superadmin"];
+    if (!newRole || !allowedRoles.includes(newRole)) {
+      return res.status(400).json({
+        status: "failed",
+        message: `Invalid role. Allowed roles: ${allowedRoles.join(", ")}`
+      });
+    }
+
+    // Find user
+    const user = await WaterMonitor.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        status: "failed",
+        message: "User not found"
+      });
+    }
+
+    // Prevent promoting oneself (optional)
+    if (req.user.id === user._id.toString()) {
+      return res.status(403).json({
+        status: "failed",
+        message: "You cannot change your own role"
+      });
+    }
+
+    // Update role
+    user.role = newRole;
+    await user.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "User promoted successfully",
+      data: {
+        id: user._id,
+        email: user.email,
+        role: user.role
+      }
+    });
     
   } catch (error) {
     next(error);
