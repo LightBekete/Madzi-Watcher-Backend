@@ -20,6 +20,7 @@ import {
   getWaterQualityClassification,
   getWaterStabilityScore,
   getDistrictStatistics,
+  getTreatmentPlantStatistics,
 } from '../controllers/waterQualityController.mjs';
 
 const router = express.Router();
@@ -53,4 +54,5 @@ router.get('/analysis/outliers', authenticateJWT, detectOutliers);
 
 // Location-Based Routes (accessible to all authenticated users)
 router.get('/district/:district', authenticateJWT, getDistrictStatistics);
+router.get('/plant/:plantId', authenticateJWT, getTreatmentPlantStatistics);
 export default router;

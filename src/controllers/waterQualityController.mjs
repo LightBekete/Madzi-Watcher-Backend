@@ -1377,3 +1377,130 @@ export const getDistrictStatistics = async (req, res, next) => {
         next(error);
     }
 };
+
+
+/*
+|--------------------------------------------------------------------------
+| getTreatmentPlantStatistics
+|--------------------------------------------------------------------------
+| Computes statistics for a specific treatment plant.
+|
+| Expected operations:
+| - Filter records by treatment plant ID.
+| - Compute parameter averages and trends.
+|
+| Purpose:
+| Helps evaluate the performance of individual treatment plants.
+*/
+export const getTreatmentPlantStatistics = async (req, res, next) => {
+    try {
+        const { plantId } = req.params;
+
+        if (!plantId) {
+            return res.status(400).json({
+                status: "failed",
+                message: "Treatment plant ID is required"
+            });
+        }
+
+        const plantStats = await WaterQualityData.aggregate([
+            {
+                $match: { "location.treatmentPlantId": plantId }
+            },
+            {
+                $group: {
+                    _id: {
+                        plantId: "$location.treatmentPlantId",
+                        district: "$location.district"
+                    },
+                    totalReadings: { $sum: 1 },
+                    avgPH: { $avg: "$pH" },
+                    avgTDS: { $avg: "$tds" },
+                    avgTurbidity: { $avg: "$turbidity" },
+                    avgConductivity: { $avg: "$electricalConductivity" },
+                    avgWQI: { $avg: "$waterQualityIndex" },
+
+                    minWQI: { $min: "$waterQualityIndex" },
+                    maxWQI: { $max: "$waterQualityIndex" },
+                    stdDevWQI: { $stdDevPop: "$waterQualityIndex" },
+
+                    firstReading: { $min: "$createdAt" },
+                    lastReading: { $max: "$createdAt" }
+                }
+            }
+        ]);
+
+        // Get daily performance for the last 30 days
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+        const dailyPerformance = await WaterQualityData.aggregate([
+            {
+                $match: {
+                    "location.treatmentPlantId": plantId,
+                    createdAt: { $gte: thirtyDaysAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                    },
+                    avgWQI: { $avg: "$waterQualityIndex" },
+                    avgTurbidity: { $avg: "$turbidity" },
+                    readings: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { "_id.date": 1 }
+            }
+        ]);
+
+        // Get WQI classification distribution
+        const classificationDist = await WaterQualityData.aggregate([
+            {
+                $match: { "location.treatmentPlantId": plantId }
+            },
+            {
+                $group: {
+                    _id: {
+                        $switch: {
+                            branches: [
+                                { case: { $lte: ["$waterQualityIndex", 50] }, then: "Excellent" },
+                                { case: { $lte: ["$waterQualityIndex", 100] }, then: "Good" },
+                                { case: { $lte: ["$waterQualityIndex", 200] }, then: "Poor" }
+                            ],
+                            default: "Unsafe"
+                        }
+                    },
+                    count: { $sum: 1 },
+                    percentage: { $avg: 1 }
+                }
+            }
+        ]);
+
+        // Calculate total percentage
+        const total = classificationDist.reduce((acc, curr) => acc + curr.count, 0);
+        classificationDist.forEach(item => {
+            item.percentage = (item.count / total * 100).toFixed(2) + "%";
+        });
+
+        if (plantStats.length === 0) {
+            return res.status(404).json({
+                status: "failed",
+                message: `No data found for treatment plant: ${plantId}`
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: `Statistics for treatment plant: ${plantId}`,
+            data: {
+                plantInfo: plantStats[0],
+                dailyPerformance,
+                classification: classificationDist
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
