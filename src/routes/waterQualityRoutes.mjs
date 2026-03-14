@@ -9,6 +9,7 @@ import {
   getStandardDeviationStatistics,
   getMedianStatistics,
   getMinMaxStatistics,
+  getDailyStatistics,
 } from '../controllers/waterQualityController.mjs';
 
 const router = express.Router();
@@ -25,5 +26,8 @@ router.get('/statistics/variance', authenticateJWT, getVarianceStatistics);
 router.get('/statistics/std-dev', authenticateJWT, getStandardDeviationStatistics);
 router.get('/statistics/median', authenticateJWT, getMedianStatistics);
 router.get('/statistics/min-max', authenticateJWT, getMinMaxStatistics);
+
+// Time-Based Aggregation Routes (accessible to all authenticated users)
+router.get('/aggregations/daily', authenticateJWT, getDailyStatistics);
 
 export default router;

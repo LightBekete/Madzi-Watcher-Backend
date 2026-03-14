@@ -449,3 +449,72 @@ export const getMinMaxStatistics = async (req, res, next) => {
         next(error);
     }
 };
+
+
+/*
+|--------------------------------------------------------------------------
+| getDailyStatistics
+|--------------------------------------------------------------------------
+| Aggregates water quality data by day.
+|
+| Expected operations:
+| - Group sensor readings by day.
+| - Calculate daily averages for parameters.
+|
+| Purpose:
+| Enables visualization of daily water quality trends.
+*/
+export const getDailyStatistics = async (req, res, next) => {
+    try {
+        const { days = 30 } = req.query;
+
+        const dailyStats = await WaterQualityData.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: "$createdAt" },
+                        month: { $month: "$createdAt" },
+                        day: { $dayOfMonth: "$createdAt" }
+                    },
+                    date: { $first: "$createdAt" },
+                    avgPH: { $avg: "$pH" },
+                    avgTDS: { $avg: "$tds" },
+                    avgTurbidity: { $avg: "$turbidity" },
+                    avgConductivity: { $avg: "$electricalConductivity" },
+                    avgWQI: { $avg: "$waterQualityIndex" },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    date: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$date" }
+                    },
+                    avgPH: 1,
+                    avgTDS: 1,
+                    avgTurbidity: 1,
+                    avgConductivity: 1,
+                    avgWQI: 1,
+                    readings: "$count"
+                }
+            }
+        ]);
+
+        return res.status(200).json({
+            status: "success",
+            message: "Daily statistics retrieved successfully",
+            data: dailyStats
+        });
+    } catch (error) {
+        next(error);
+    }
+};
