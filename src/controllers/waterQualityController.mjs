@@ -518,3 +518,151 @@ export const getDailyStatistics = async (req, res, next) => {
         next(error);
     }
 };
+
+
+/*
+|--------------------------------------------------------------------------
+| getWeeklyStatistics
+|--------------------------------------------------------------------------
+| Aggregates water quality data by week.
+|
+| Expected operations:
+| - Group readings by week.
+| - Compute weekly averages.
+|
+| Purpose:
+| Helps monitor treatment plant performance weekly.
+*/
+export const getWeeklyStatistics = async (req, res, next) => {
+    try {
+        const { weeks = 12 } = req.query;
+
+        const weeklyStats = await WaterQualityData.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: new Date(Date.now() - weeks * 7 * 24 * 60 * 60 * 1000) }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: "$createdAt" },
+                        week: { $week: "$createdAt" }
+                    },
+                    weekStart: {
+                        $min: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                        }
+                    },
+                    weekEnd: {
+                        $max: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                        }
+                    },
+                    avgPH: { $avg: "$pH" },
+                    avgTDS: { $avg: "$tds" },
+                    avgTurbidity: { $avg: "$turbidity" },
+                    avgConductivity: { $avg: "$electricalConductivity" },
+                    avgWQI: { $avg: "$waterQualityIndex" },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { "_id.year": -1, "_id.week": -1 }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    week: {
+                        start: "$weekStart",
+                        end: "$weekEnd"
+                    },
+                    avgPH: 1,
+                    avgTDS: 1,
+                    avgTurbidity: 1,
+                    avgConductivity: 1,
+                    avgWQI: 1,
+                    readings: "$count"
+                }
+            }
+        ]);
+
+        return res.status(200).json({
+            status: "success",
+            message: "Weekly statistics retrieved successfully",
+            data: weeklyStats
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| getMonthlyStatistics
+|--------------------------------------------------------------------------
+| Aggregates water quality measurements per month.
+|
+| Expected operations:
+| - Group readings by month.
+| - Compute average values for parameters.
+|
+| Purpose:
+| Allows long-term trend analysis and seasonal pattern detection.
+*/
+export const getMonthlyStatistics = async (req, res, next) => {
+    try {
+        const { months = 12 } = req.query;
+
+        const monthlyStats = await WaterQualityData.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: new Date(Date.now() - months * 30 * 24 * 60 * 60 * 1000) }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: "$createdAt" },
+                        month: { $month: "$createdAt" }
+                    },
+                    month: {
+                        $first: {
+                            $dateToString: { format: "%Y-%m", date: "$createdAt" }
+                        }
+                    },
+                    avgPH: { $avg: "$pH" },
+                    avgTDS: { $avg: "$tds" },
+                    avgTurbidity: { $avg: "$turbidity" },
+                    avgConductivity: { $avg: "$electricalConductivity" },
+                    avgWQI: { $avg: "$waterQualityIndex" },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { "_id.year": -1, "_id.month": -1 }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    month: 1,
+                    avgPH: 1,
+                    avgTDS: 1,
+                    avgTurbidity: 1,
+                    avgConductivity: 1,
+                    avgWQI: 1,
+                    readings: "$count"
+                }
+            }
+        ]);
+
+        return res.status(200).json({
+            status: "success",
+            message: "Monthly statistics retrieved successfully",
+            data: monthlyStats
+        });
+    } catch (error) {
+        next(error);
+    }
+};
