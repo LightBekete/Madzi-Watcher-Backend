@@ -3,7 +3,6 @@ import { authenticateJWT } from '../middleware/authMiddleware.mjs';
 import { checkRole } from '../middleware/roleMiddleware.mjs';
 import {
   getDashboardStatistics,
-  getWaterQualityHistory,
   getMeanStatistics,
   getVarianceStatistics,
   getStandardDeviationStatistics,
@@ -12,7 +11,6 @@ import {
   getDailyStatistics,
   getWeeklyStatistics,
   getMonthlyStatistics,
-  getYearlyStatistics,
   getTrendAnalysis,
   getMovingAverage,
   getParameterCorrelation,
@@ -20,37 +18,43 @@ import {
   getWaterQualityClassification,
   getWaterStabilityScore,
   getDistrictStatistics,
-  getTreatmentPlantStatistics,
+ getTreatmentPlantStatistics  
 } from '../controllers/waterQualityController.mjs';
 
 const router = express.Router();
 
-// Dashboard & Overview Routes (accessible to all authenticated users)
-router.get('/dashboard', authenticateJWT, getDashboardStatistics);
-router.get('/classification', authenticateJWT, getWaterQualityClassification);
-router.get('/stability', authenticateJWT, getWaterStabilityScore);
+// ====================== PUBLIC PROTECTED ROUTES ======================
+// Accessible to all authenticated users
+// router.get('/latest', authenticateJWT, getLatestWaterQuality);
+// router.get('/history', authenticateJWT, getWaterQualityHistory);
+// router.get('/stats', authenticateJWT, getWaterQualityStats);
+// router.get('/index', authenticateJWT, getWaterQualityIndex);
 
-// Get water quality data (accessible to all authenticated users)
-router.get('/history', authenticateJWT, getWaterQualityHistory);
+// ====================== ADVANCED STATISTICS ROUTES ======================
+// All statistics are protected with authentication
+router.get('/stats/dashboard',          authenticateJWT, getDashboardStatistics);
+router.get('/stats/mean',               authenticateJWT, getMeanStatistics);
+router.get('/stats/variance',           authenticateJWT, getVarianceStatistics);
+router.get('/stats/std-dev',            authenticateJWT, getStandardDeviationStatistics);
+router.get('/stats/median',             authenticateJWT, getMedianStatistics);
+router.get('/stats/min-max',            authenticateJWT, getMinMaxStatistics);
+router.get('/stats/daily',              authenticateJWT, getDailyStatistics);
+router.get('/stats/weekly',             authenticateJWT, getWeeklyStatistics);
+router.get('/stats/monthly',            authenticateJWT, getMonthlyStatistics);
+router.get('/stats/trend',              authenticateJWT, getTrendAnalysis);
+router.get('/stats/moving-average',     authenticateJWT, getMovingAverage);
+router.get('/stats/correlation',        authenticateJWT, getParameterCorrelation);
+router.get('/stats/outliers',           authenticateJWT, detectOutliers);
+router.get('/stats/classification',     authenticateJWT, getWaterQualityClassification);
+router.get('/stats/stability-score',    authenticateJWT, getWaterStabilityScore);
+router.get('/stats/district',           authenticateJWT, getDistrictStatistics);
+router.get('/stats/treatment-plant',    authenticateJWT, getTreatmentPlantStatistics);
 
-// Statistical Measures Routes (accessible to all authenticated users)
-router.get('/statistics/mean', authenticateJWT, getMeanStatistics);
-router.get('/statistics/variance', authenticateJWT, getVarianceStatistics);
-router.get('/statistics/std-dev', authenticateJWT, getStandardDeviationStatistics);
-router.get('/statistics/median', authenticateJWT, getMedianStatistics);
-router.get('/statistics/min-max', authenticateJWT, getMinMaxStatistics);
-
-// Time-Based Aggregation Routes (accessible to all authenticated users)
-router.get('/aggregations/daily', authenticateJWT, getDailyStatistics);
-router.get('/aggregations/weekly', authenticateJWT, getWeeklyStatistics);
-router.get('/aggregations/monthly', authenticateJWT, getMonthlyStatistics);
-router.get('/aggregations/yearly', authenticateJWT, getYearlyStatistics);
-
-// Analysis Routes (accessible to all authenticated users)
-router.get('/analysis/trends', authenticateJWT, getTrendAnalysis);
-router.get('/analysis/moving-average', authenticateJWT, getMovingAverage);
-router.get('/analysis/correlation', authenticateJWT, getParameterCorrelation);
-router.get('/analysis/outliers', authenticateJWT, detectOutliers);
+// ====================== ADMIN / OFFICER ONLY ROUTES ======================
+// router.post('/manual', authenticateJWT, checkRole(['admin', 'superadmin', 'officer']), addWaterQualityDataManual);
+// router.post('/',       authenticateJWT, checkRole(['admin', 'superadmin', 'officer']), addWaterQualityData);
+// router.put('/:id',     authenticateJWT, checkRole(['admin', 'superadmin', 'officer']), updateWaterQualityData);
+// router.delete('/:id',  authenticateJWT, checkRole(['admin', 'superadmin', 'officer']), deleteWaterQualityData);
 
 // Location-Based Routes (accessible to all authenticated users)
 router.get('/district/:district', authenticateJWT, getDistrictStatistics);

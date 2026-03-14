@@ -84,9 +84,15 @@ mqttClient.on('message', async (topic, message) => {
 
       // Real-time push via Socket.io
       if (ioInstance) {
-        ioInstance.emit('newReading', {
-          ...newReading.toObject(),
-          waterQualityIndex: newReading,
+        ioInstance.emit('water-quality-data', {
+          deviceId: newReading.deviceId,
+          turbidity: newReading.turbidity ?? null,
+          pH: newReading.pH ?? null,                    // map pH → ph
+          tds: newReading.tds ?? null,
+          electricalConductivity: newReading.electricalConductivity ?? null,
+          waterQualityIndex: newReading.waterQualityIndex ?? null,
+          location: newReading.location,
+          timestamp: newReading.times 
         });
       }
     }
