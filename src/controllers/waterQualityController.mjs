@@ -853,3 +853,70 @@ export const getTrendAnalysis = async (req, res, next) => {
     }
 };
 
+
+/*
+|--------------------------------------------------------------------------
+| getMovingAverage
+|--------------------------------------------------------------------------
+| Computes moving averages for sensor readings.
+|
+| Expected operations:
+| - Smooth noisy sensor data.
+| - Calculate rolling averages over time windows.
+|
+| Purpose:
+| Helps identify long-term patterns in water quality data.
+*/
+export const getMovingAverage = async (req, res, next) => {
+    try {
+        const { window = 7, parameter = "turbidity" } = req.query;
+
+        const validParameters = ["pH", "tds", "turbidity", "electricalConductivity", "waterQualityIndex"];
+
+        if (!validParameters.includes(parameter)) {
+            return res.status(400).json({
+                status: "failed",
+                message: "Invalid parameter. Choose from: " + validParameters.join(", ")
+            });
+        }
+
+        const data = await WaterQualityData.find({})
+            .sort({ createdAt: 1 })
+            .select(`${parameter} createdAt`)
+            .lean();
+
+        if (data.length < window) {
+            return res.status(400).json({
+                status: "failed",
+                message: `Need at least ${window} data points for moving average`
+            });
+        }
+
+        const movingAverages = [];
+        for (let i = 0; i <= data.length - window; i++) {
+            const windowData = data.slice(i, i + window);
+            const sum = windowData.reduce((acc, curr) => acc + curr[parameter], 0);
+            const avg = sum / window;
+
+            movingAverages.push({
+                date: data[i + Math.floor(window / 2)].createdAt,
+                value: avg,
+                periodStart: windowData[0].createdAt,
+                periodEnd: windowData[windowData.length - 1].createdAt
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: `Moving average calculated for ${parameter}`,
+            data: {
+                parameter,
+                windowSize: parseInt(window),
+                movingAverages
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
