@@ -35,8 +35,10 @@ export const verifyOtp = async (req, res, next) => {
       return res.status(400).json({status: "failed:", message: "OTP has expired"})
     }
     //veriffication session for otp
+    session.status = "verified"
+    await session.save()
 
-    const verificationSession = await IdentityVerificationSession.findOne({email: email, status: "pending"})
+    const verificationSession = await IdentityVerificationSession.findOne({email: email}) //status: "pending"
 
     if(!verificationSession) {
       return res.status(400).json({status: "failed:", message: "No pending verification session found"})
@@ -278,7 +280,7 @@ export const refreshToken = async (req, res, next) => {
 // Request Password Reset
 export const requestPasswordReset = async (req, res, next) => {
   try {
-    const email = req.validatedData
+    const {email} = req.validatedData
     const findWaterMonitor = await WaterMonitors.findOne({email})
     if(!findWaterMonitor) {
       return res.status(400).json({status: "failed:", message: "Email not found"})
@@ -302,6 +304,26 @@ export const requestPasswordReset = async (req, res, next) => {
     }
     
    );
+   const sessionExpires = new Date(Date.now() + 15 * 60 * 1000) // session expires in 15 minutes
+
+   const session = await IdentityVerificationSession.findOneAndUpdate(  
+    {
+      waterMonitorId: findWaterMonitor._id
+    },
+    {
+      $set:{
+        email: findWaterMonitor.email,
+        status: "pending",
+        expiresAt: sessionExpires 
+      }
+    },
+    {
+      new: true,
+      upsert: true
+    }
+   
+  );
+
 
    const html = `
       <h1>Madzi Watcher Alert</h1>
@@ -324,10 +346,10 @@ export const requestPasswordReset = async (req, res, next) => {
 
 //reset password
 export const resetPassword = async (req, res, next) => {
-  try {
-    const {email, newPassword, confirmPassword} = req.validatedData  
+  try { 
+    const {email, newPassword, confirmNewPassword} = req.validatedData  
 
-    if(newPassword !== confirmPassword) {
+    if(newPassword !== confirmNewPassword) {
       return res.status(400).json({status: "failed:", message: "Passwords do not match"})
     }
     
@@ -347,9 +369,7 @@ export const resetPassword = async (req, res, next) => {
     findWaterMonitor.password = hashedPassword
     await findWaterMonitor.save()
     
-    otpSession.status = "used"
-    await otpSession.save()
-
+  
     res.status(200).json({
       status: "success",
       message: "Password reset successful. You can now log in with your new password."
