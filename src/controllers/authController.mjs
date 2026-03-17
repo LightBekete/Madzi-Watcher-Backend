@@ -18,7 +18,6 @@ import IdentityVerificationSession from "../models/IdentityVerificationSession.m
 import RefreshToken from "../models/RefreshToken.mjs"
 import mongoose from "mongoose"
 import WaterMonitors from "../models/WaterMonitors.mjs"
-//import { AccessTokenInstance } from "twilio/lib/rest/verify/v2/service/accessToken"
 
 // Verify OTP
 export const verifyOtp = async (req, res, next) => {
@@ -385,8 +384,49 @@ export const resetPassword = async (req, res, next) => {
 //change password
 export const changePassword = async (req, res, next) => {
   try {
+    const userId = req.user?.id;
+    const {currentPassword, newPassword, confirmNewPassword} = req.validatedData
+
+    const waterMonitor = await WaterMonitors.findById(userId)
+    if(!waterMonitor){
+      return res.status(404).json({
+        status: "failed:",
+        message: "WaterMonitor not found"
+      })
+    }
+    //checking if the currentPassworod is correct
+    const isItMatch = await comparePassword(currentPassword, waterMonitor.password)
+    if(!isItMatch) {
+      return res.status(400).json({
+        status: "failed:",
+        message: "CurrentPassword is incorrect"
+      })
+    }
     
+    const isItSame = await comparePassword(newPassword, waterMonitor.password)
+    if(isItSame) {
+      return res.status(400).json({
+        status: "failed:",
+        message: "NewPassword must not be the same as the currentPassword"
+      })
+    }
+
+    if(newPassword !== confirmNewPassword){
+      return res.status(400).json({
+        status: "failed:",
+        message: "Passwords must match!"
+      })
+    }
+
+    const hashedPassword = await hashPassword(newPassword)
+    waterMonitor.password = hashedPassword
+    await waterMonitor.save()
     
+    res.status(200).json({
+      status: "success",
+      message: "Password changed successfully"
+    })
+
   } catch (error) {
     next(error);
     
