@@ -254,7 +254,25 @@ export const loginUser = async (req, res, next) => {
 // Logout User
 export const logoutUser = async (req, res, next) => {
   try {
-    
+    const refreshTokenCookie = req.cookies.refreshLoginToken
+    if(refreshTokenCookie) {
+      await RefreshToken.findOneAndUpdate(
+        {
+          token: refreshTokenCookie,
+          revoked: true,
+        }
+        
+      )
+      res.clearCookie("refreshLoginToken", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+      })
+    }    
+    return res.status(200).json({
+      status: "success",
+      message: "Logged out successfully"
+    })
     
   } catch (error) {
     next(error);
