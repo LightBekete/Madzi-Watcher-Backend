@@ -13,8 +13,8 @@ const MQTT_PASSWORD = process.env.MQTT_PASSWORD || null;
 
 let ioInstance; // Will be set from server.mjs
 
-const mqttClient = mqtt.connect({
-  host:MQTT_BROKER,
+const mqttClient = mqtt.connect(MQTT_BROKER,{
+  //host:MQTT_BROKER,
   port:MQTT_PORT, 
   username: process.env.MQTT_USERNAME, // Optional: for authenticated brokers
   password: process.env.MQTT_PASSWORD, // Optional: for authenticated brokers
