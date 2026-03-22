@@ -26,6 +26,7 @@ const mqttClient = mqtt.connect(`${MQTT_BROKER}:${MQTT_PORT}`,{
   reconnectPeriod: 1000,
   rejectUnauthorized: false,   // Allow HiveMQ's certificate
   connectTimeout: 4000,       // Increase to 20 seconds for the cloud hop
+  keepalive: 60,
 });
 
 mqttClient.on('connect', () => {
