@@ -18,15 +18,14 @@ let ioInstance; // Will be set from server.mjs
 console.log(`[MQTT] Connecting to broker at ${MQTT_BROKER}:${MQTT_PORT} with client ID ${MQTT_CLIENT_ID}`); 
 
 const mqttClient = mqtt.connect(`${MQTT_BROKER}:${MQTT_PORT}`,{
-  //host:MQTT_BROKER,
-  //port:MQTT_PORT, 
   username: process.env.MQTT_USERNAME, // Optional: for authenticated brokers
-  password: process.env.MQTT_PASSWORD, // Optional: for authenticated brokers
+  password: process.env.MQTT_PASSWORD, //Optional: for authenticated brokers
   clientId: MQTT_CLIENT_ID,
   clean: true,
-  protocol: 'mqtts',
+  protocol: 'mqtts', // Use 'mqtts' for secure connection, 'mqtt' for unencrypted
   reconnectPeriod: 1000,
-  connectTimeout: 4000
+  rejectUnauthorized: false,   // Allow HiveMQ's certificate
+  connectTimeout: 4000,       // Increase to 20 seconds for the cloud hop
 });
 
 mqttClient.on('connect', () => {
