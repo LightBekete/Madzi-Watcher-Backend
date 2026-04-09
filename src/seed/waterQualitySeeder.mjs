@@ -5,7 +5,7 @@ export const seedWaterQuality = async () => {
   const waterQualitySeed = [
     {
       deviceId: "WM-1001",
-      pH: 7.2,
+      pH: 7.32,
       tds: 320,
       electricalConductivity: 450,
       turbidity: 1.5,

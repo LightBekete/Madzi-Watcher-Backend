@@ -843,9 +843,12 @@ export const getTrendAnalysis = async (req, res, next) => {
             }
         ]);
 
+         console.log('data',trends[0])
+
         return res.status(200).json({
             status: "success",
             message: "Trend analysis completed successfully",
+           
             data: trends[0] || { trends: {} }
         });
     } catch (error) {
