@@ -18,7 +18,8 @@ import {
   getWaterQualityClassification,
   getWaterStabilityScore,
   getDistrictStatistics,
- getTreatmentPlantStatistics  
+ getTreatmentPlantStatistics,
+ getTrendLine  
 } from '../controllers/waterQualityController.mjs';
 
 const router = express.Router();
@@ -62,7 +63,7 @@ router.get('/stats/min-max', getMinMaxStatistics);
 router.get('/stats/daily', getDailyStatistics);
 router.get('/stats/weekly', getWeeklyStatistics);
 router.get('/stats/monthly', getMonthlyStatistics);
-router.get('/stats/trend', getTrendAnalysis);
+router.get('/stats/trends', getTrendAnalysis);
 router.get('/stats/moving-average', getMovingAverage);
 router.get('/stats/correlation', getParameterCorrelation);
 router.get('/stats/outliers', detectOutliers);
@@ -70,6 +71,8 @@ router.get('/stats/classification', getWaterQualityClassification);
 router.get('/stats/stability-score', getWaterStabilityScore);
 router.get('/stats/:district/district', getDistrictStatistics);
 router.get('/stats/:treatment-plant/treatment-plant', getTreatmentPlantStatistics);
+router.get('/stats/trend-line', getTrendLine);
+// router.get('/stats/wqi-classification', getWQIClassification);
 
 // ====================== ADMIN / OFFICER ONLY ROUTES ======================
 // router.post('/manual', authenticateJWT, checkRole(['admin', 'superadmin', 'officer']), addWaterQualityDataManual);
