@@ -240,6 +240,8 @@ export const loginUser = async (req, res, next) => {
           id: findWaterMonitor._id,
           email: findWaterMonitor.email,
           role: findWaterMonitor.role,
+          firstName: findWaterMonitor.firstName,
+          lastName: findWaterMonitor.lastName,
         } 
       
       }
