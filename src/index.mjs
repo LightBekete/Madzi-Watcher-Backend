@@ -51,7 +51,7 @@ app.use(cookieParser());
 app.use(cors({
   origin: [process.env.FRONTEND_URL || 'http://localhost:3000'],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  credentials: false
+  credentials: true
 }));
 
 // 2. Socket middleware

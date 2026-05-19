@@ -94,8 +94,6 @@ export const seedWaterQuality = async () => {
       location: { district: "Karonga", treatmentPlantId: "TP-10" }
     }
   ];
-
-  await WaterQualityData.deleteMany();
   await WaterQualityData.insertMany(waterQualitySeed);
 
   console.log("Water quality data seeded");
