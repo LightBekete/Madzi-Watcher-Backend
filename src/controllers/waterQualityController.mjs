@@ -1,4 +1,5 @@
 import WaterQualityData from "../models/WaterQualityData.mjs";
+import { buildDateFilter } from "../utils/dateFilters.mjs";
 
 
 /*
@@ -203,7 +204,20 @@ export const getWaterQualityHistory = async (req, res, next) => {
 */
 export const getMeanStatistics = async (req, res, next) => {
     try {
+
+        const { 
+            period = 'all',
+            startDate,
+            endDate 
+        } = req.query;
+
+        // Build the date filter
+        const dateFilter = buildDateFilter(period, startDate, endDate);
+
         const meanStats = await WaterQualityData.aggregate([
+            {
+                $match: dateFilter
+            },
             {
                 $group: {
                     _id: null,
@@ -216,17 +230,23 @@ export const getMeanStatistics = async (req, res, next) => {
             }
         ]);
 
-        if (meanStats.length === 0) {
+        if (!meanStats || meanStats.length === 0) {
             return res.status(404).json({
                 status: "failed",
-                message: "No data available for mean statistics"
+                message: "No data available for mean statistics in the selected period"
             });
         }
 
+        const totalReadings = await WaterQualityData.countDocuments(dateFilter);
+
         return res.status(200).json({
             status: "success",
-            message: "Mean statistics calculated successfully",
-            data: meanStats[0]
+            message: `Mean statistics calculated successfully for period: ${period}`,
+            data: {
+                ...meanStats[0],
+                totalReadings,
+                appliedFilter: { period, startDate, endDate }
+            }
         });
     } catch (error) {
         next(error);
@@ -249,7 +269,19 @@ export const getMeanStatistics = async (req, res, next) => {
 */
 export const getVarianceStatistics = async (req, res, next) => {
     try {
+
+         const { 
+            period = 'all',
+            startDate,
+            endDate 
+        } = req.query;
+
+        // Build the date filter
+        const dateFilter = buildDateFilter(period, startDate, endDate);
         const varianceStats = await WaterQualityData.aggregate([
+            {
+                $match: dateFilter
+            },
             {
                 $group: {
                     _id: null,
@@ -306,7 +338,19 @@ export const getVarianceStatistics = async (req, res, next) => {
 */
 export const getStandardDeviationStatistics = async (req, res, next) => {
     try {
+
+         const { 
+            period = 'all',
+            startDate,
+            endDate 
+        } = req.query;
+
+        // Build the date filter
+        const dateFilter = buildDateFilter(period, startDate, endDate);
         const stdDevStats = await WaterQualityData.aggregate([
+            {
+                $match: dateFilter
+            },
             {
                 $group: {
                     _id: null,
@@ -352,8 +396,17 @@ export const getStandardDeviationStatistics = async (req, res, next) => {
 */
 export const getMedianStatistics = async (req, res, next) => {
     try {
+
+         const { 
+            period = 'all',
+            startDate,
+            endDate 
+        } = req.query;
+
+        // Build the date filter
+        const dateFilter = buildDateFilter(period, startDate, endDate);
         const getAllValues = async (field) => {
-            const values = await WaterQualityData.find({}, { [field]: 1, _id: 0 })
+            const values = await WaterQualityData.find(dateFilter, { [field]: 1, _id: 0 })
                 .sort({ [field]: 1 })
                 .lean();
             return values.map(v => v[field]).filter(v => v !== null && v !== undefined);
@@ -406,7 +459,19 @@ export const getMedianStatistics = async (req, res, next) => {
 */
 export const getMinMaxStatistics = async (req, res, next) => {
     try {
+
+         const { 
+            period = 'all',
+            startDate,
+            endDate 
+        } = req.query;
+
+        // Build the date filter
+        const dateFilter = buildDateFilter(period, startDate, endDate);
         const minMaxStats = await WaterQualityData.aggregate([
+            {
+                $match: dateFilter
+            },
             {
                 $group: {
                     _id: null,
@@ -743,13 +808,19 @@ export const getYearlyStatistics = async (req, res, next) => {
 */
 export const getTrendAnalysis = async (req, res, next) => {
     try {
-        const { period = 30 } = req.query; // days to analyze
+         const { 
+            period = 'all',
+            startDate,
+            endDate 
+        } = req.query;
+
+        // Build the date filter
+        const dateFilter = buildDateFilter(period, startDate, endDate) || {};
 
         const trends = await WaterQualityData.aggregate([
             {
-                $match: {
-                    createdAt: { $gte: new Date(Date.now() - period * 24 * 60 * 60 * 1000) }
-                }
+                $match: dateFilter
+                
             },
             {
                 $sort: { createdAt: 1 }
@@ -1186,7 +1257,18 @@ export const getWaterQualityClassification = async (req, res, next) => {
 */
 export const getWaterStabilityScore = async (req, res, next) => {
     try {
+         const { 
+            period = 'all',
+            startDate,
+            endDate 
+        } = req.query;
+
+        // Build the date filter
+        const dateFilter = buildDateFilter(period, startDate, endDate);
         const stabilityScores = await WaterQualityData.aggregate([
+            {
+                $match: dateFilter
+            },
             {
                 $group: {
                     _id: null,
@@ -1502,6 +1584,128 @@ export const getTreatmentPlantStatistics = async (req, res, next) => {
                 classification: classificationDist
             }
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export const getTrendLine = async (req, res, next) => {
+  try {
+    const {
+      period = 'last_30_days',
+      startDate,
+      endDate
+    } = req.query;
+
+    const dateFilter = buildDateFilter(period, startDate, endDate);
+
+    const trends = await WaterQualityData.aggregate([
+      {
+        $match: dateFilter
+      },
+      {
+        // group by day (important for charts)
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt"
+            }
+          },
+          pH: { $avg: "$pH" },
+          tds: { $avg: "$tds" },
+          turbidity: { $avg: "$turbidity" },
+          conductivity: { $avg: "$conductivity" },
+          wqi: { $avg: "$waterQualityIndex" }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      },
+      {
+        $project: {
+          _id: 0,
+          date: "$_id",
+          pH: { $round: ["$pH", 2] },
+          tds: { $round: ["$tds", 0] },
+          turbidity: { $round: ["$turbidity", 2] },
+          conductivity: { $round: ["$conductivity", 0] },
+          wqi: { $round: ["$wqi", 1] }
+        }
+      }
+    ]);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Trend line data fetched successfully",
+      data: trends
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getWQIClassification = async (req, res, next) => {
+    try {
+        const { period = 'last_30_days', startDate, endDate } = req.query;
+
+        // Use your existing helper to build the date filter
+        const dateFilter = buildDateFilter(period, startDate, endDate);
+
+        const classification = await WaterQualityData.aggregate([
+            {
+                $match: dateFilter
+            },
+            {
+                // Step 1: Assign a label to every single reading based on WQI score
+                $project: {
+                    category: {
+                        $switch: {
+                            branches: [
+                                { case: { $gte: ["$waterQualityIndex", 80] }, then: "Excellent" },
+                                { case: { $gte: ["$waterQualityIndex", 60] }, then: "Good" },
+                                { case: { $gte: ["$waterQualityIndex", 40] }, then: "Poor" }
+                            ],
+                            default: "Unsafe"
+                        }
+                    }
+                }
+            },
+            {
+                // Step 2: Count how many readings are in each category
+                $group: {
+                    _id: "$category",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    category: "$_id",
+                    count: 1
+                }
+            }
+        ]);
+
+        // Step 3: Ensure all categories exist in the response (even if count is 0)
+        // This prevents the Donut Chart from "flickering" or missing labels
+        const defaultCategories = ["Excellent", "Good", "Poor", "Unsafe"];
+        const distribution = defaultCategories.map(cat => {
+            const found = classification.find(item => item.category === cat);
+            return {
+                category: cat,
+                count: found ? found.count : 0
+            };
+        });
+
+        return res.status(200).json({
+            status: "success",
+            message: "WQI Classification fetched successfully",
+            data: { distribution }
+        });
+
     } catch (error) {
         next(error);
     }
