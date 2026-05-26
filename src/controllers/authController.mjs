@@ -318,8 +318,8 @@ export const refreshToken = async (req, res, next) => {
       })
     }
     //fetch water monitor if he still exists
-    const waterMonitor = await WaterMonitors.findById(decoded.sub)
-    if(!waterMonitor) {
+    const findWaterMonitor = await WaterMonitors.findById(decoded.sub)
+    if(!findWaterMonitor) {
       return res.status(401).json({
         status: "failed:", 
         message: "User no longer exists"
@@ -330,8 +330,8 @@ export const refreshToken = async (req, res, next) => {
     await findStoredToken.save()
 
     const payload = {
-      sub: waterMonitor._id,
-      role: waterMonitor.role
+      sub: findWaterMonitor._id,
+      role: findWaterMonitor.role
     }
     const newAccessToken = generateAccessToken(payload)
     const newRefreshToken = generateRefreshToken(payload)
@@ -339,7 +339,7 @@ export const refreshToken = async (req, res, next) => {
 
     await RefreshToken.create({
       token: newRefreshToken,
-      user: waterMonitor._id,
+      user: findWaterMonitor._id,
       expiresAt: decodedNewRefreshToken.exp,
       revoked: false, 
     })
