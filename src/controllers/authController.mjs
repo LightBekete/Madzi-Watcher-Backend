@@ -284,19 +284,85 @@ export const logoutUser = async (req, res, next) => {
   
 }
 
-
 // Refresh Token
 export const refreshToken = async (req, res, next) => {
   try {
+    //getting refresh token from cookie if they exist
+    const refreshTokenOld = req.cookies.refreshLoginToken;
+    if(!refreshTokenOld) {
+      return res.status(401).json({
+        status: "failed:", 
+        message: "Missing refresh token"
+      })
+    }
+
+    let decoded;
+    try {
+      decoded = verifyRefreshToken(refreshTokenOld)
+    } catch (error) {
+      return res.status(401).json({
+        status: "failed:", 
+        message: "Invalid refresh token"
+      })
+    } 
+
+    const findStoredToken = await RefreshToken.findOne({
+      token: refreshTokenOld,
+      revoked: false, 
+      expiresAt: { $gt: new Date() } 
+    })
+    if(!findStoredToken) {
+      return res.status(401).json({
+        status: "failed:", 
+        message: "Revoked or expired refresh token"
+      })
+    }
+    //fetch water monitor if he still exists
+    const waterMonitor = await WaterMonitors.findById(decoded.sub)
+    if(!waterMonitor) {
+      return res.status(401).json({
+        status: "failed:", 
+        message: "User no longer exists"
+      })
+    }
+    //revoking the old refresh token
+    findStoredToken.revoked = true
+    await findStoredToken.save()
+
+    const payload = {
+      sub: waterMonitor._id,
+      role: waterMonitor.role
+    }
+    const newAccessToken = generateAccessToken(payload)
+    const newRefreshToken = generateRefreshToken(payload)
+    const decodedNewRefreshToken = verifyRefreshToken(newRefreshToken)  
+
+    await RefreshToken.create({
+      token: newRefreshToken,
+      user: waterMonitor._id,
+      expiresAt: decodedNewRefreshToken.exp,
+      revoked: false, 
+    })
     
+    res.cookie("refreshLoginToken", newRefreshToken, {  
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    })
     
+    res.status(200).json({  
+      status: "success",
+      message: {
+        accessToken: newAccessToken,
+      }
+    })
+
   } catch (error) {
     next(error);
     
   }
   
 }
-
 // Request Password Reset
 export const requestPasswordReset = async (req, res, next) => {
   try {
