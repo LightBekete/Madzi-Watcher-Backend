@@ -25,7 +25,7 @@ const router = express.Router();
 
 // Basic Auth Routes
 router.post('/verify-otp',verifyOtp);
-router.post('/register', authenticateJWT,checkRole(['superAdmin']),validateRequest(registerWaterMonitorSchema), registerUser);
+router.post('/register', authenticateJWT,checkRole(['superadmin']),validateRequest(registerWaterMonitorSchema), registerUser);
 router.post('/login', validateRequest(loginValidation), loginUser);
 router.post('/logout', logoutUser);
 

@@ -22,7 +22,7 @@ const mqttClient = mqtt.connect(`${MQTT_BROKER}:${MQTT_PORT}`,{
   password: process.env.MQTT_PASSWORD, //Optional: for authenticated brokers
   clientId: MQTT_CLIENT_ID,
   clean: true,
-  protocol: 'mqtts', // Use 'mqtts' for secure connection, 'mqtt' for unencrypted
+  protocol: 'mqtt', // Use 'mqtts' for secure connection, 'mqtt' for unencrypted
   reconnectPeriod: 1000,
   rejectUnauthorized: false,   // Allow HiveMQ's certificate
   connectTimeout: 4000,       // Increase to 20 seconds for the cloud hop

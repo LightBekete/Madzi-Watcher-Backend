@@ -63,22 +63,20 @@ export const verifyOtp = async (req, res, next) => {
 // Register User
 export const registerUser = async (req, res, next) => {
   try {
-    const {email, role,location, verificationSessionId} = req.validatedData
+    const {email, role,location} = req.validatedData
+    console.log("Register request received:", { email, role, location }); 
 
-    const verificationSession = await IdentityVerificationSession.findById(verificationSessionId)
-
-    if(!verificationSession || verificationSession.status !== "verified") {
-      return res.status(400).json({status: "failed:", message: "Expired verification session"})
-    }
     //checking if the email is already in use
     const existingUser = await WaterMonitors.findOne({email})
     if(existingUser) {
-      return res.status(400).json({status: "failed:", message: "WaiterMonitor already registered"})
+      console.log("Attempt to register with existing email:", email);
+      return res.status(400).json({status: "failed:", message: "WaterMonitor already registered"})
     } 
     //checking first if the employee to be registered as Watermonitor exists
     const employee = await Employee.findOne({email})
 
-    if(!employee) {
+    if(employee === null ) {
+      console.log("No employee found with email:", email);
       return res.status(400).json({status: "failed:", message: "No employee found with the provided email"})
     }
 
@@ -97,6 +95,7 @@ export const registerUser = async (req, res, next) => {
       }
       
     })
+    console.log("New water monitor registered:", waterMonitor);
     
     //sending email notification to the new water monitor
     const html = `
@@ -111,7 +110,13 @@ export const registerUser = async (req, res, next) => {
       </ul>
       <p>Thank you for joining the Madzi Watcher team!</p>
     `
-    await sendEmail(employee.email, "Welcome to Madzi Watcher - Your Account Details", html)
+    try {
+      await sendEmail(employee.email, "Welcome to Madzi Watcher - Your Account Details", html);
+    } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+        // Optionally, you can still return a success response for the registration,
+        // but log the email failure.
+    }
 
     res.status(201).json({
       status: "success",
@@ -130,13 +135,13 @@ export const registerUser = async (req, res, next) => {
     // })
 
     
-    res.status(20).json({
-      status: "success",
-      message: "Water monitor registered successfully",
-      data: {
-        waterMonitor,
-      }
-    })
+    // res.status(20).json({
+    //   status: "success",
+    //   message: "Water monitor registered successfully",
+    //   data: {
+    //     waterMonitor,
+    //   }
+    // })
   
   } catch (error) {
     next(error);

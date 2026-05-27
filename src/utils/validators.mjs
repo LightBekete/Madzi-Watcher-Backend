@@ -8,7 +8,7 @@ export const registerWaterMonitorSchema = Joi.object({
      assignedArea: Joi.string().required(),
      district: Joi.string().required(),
   }).required(),
-  verificationSessionId: Joi.string().required(),
+  // verificationSessionId: Joi.string().required(),
 
 });
 
