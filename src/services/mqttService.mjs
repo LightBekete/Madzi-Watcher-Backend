@@ -23,16 +23,16 @@ const mqttClient = mqtt.connect(`${MQTT_BROKER}:${MQTT_PORT}`,{
   clientId: MQTT_CLIENT_ID,
   clean: true,
   protocol: 'mqtts', // Use 'mqtts' for secure connection, 'mqtt' for unencrypted
-  reconnectPeriod: 1000,
+  reconnectPeriod: 8000,
   rejectUnauthorized: false,   // Allow HiveMQ's certificate
-  connectTimeout: 4000,       // Increase to 20 seconds for the cloud hop
-  keepalive: 60,
+  connectTimeout: 15000,       // Increase to 20 seconds for the cloud hop
+  keepalive: 120,                    // Higher = more stable                       // Keep true for now
 });
 
 mqttClient.on('connect', () => {
   console.log('[MQTT] Connected to broker');
   
-  mqttClient.subscribe(MQTT_TOPIC_SENSOR, (err) => {
+  mqttClient.subscribe(MQTT_TOPIC_SENSOR, { qos: 0 }, (err) => {
     if (err) {
       console.error('[MQTT] Subscribe error (sensor):', err);
     } else {
@@ -40,7 +40,7 @@ mqttClient.on('connect', () => {
     }
   });
 
-  mqttClient.subscribe(MQTT_TOPIC_CONTROL, (err) => {
+  mqttClient.subscribe(MQTT_TOPIC_CONTROL,{ qos: 0 }, (err) => {
     if (err) {
       console.error('[MQTT] Subscribe error (control):', err);
     } else {
@@ -52,6 +52,7 @@ mqttClient.on('connect', () => {
 mqttClient.on('message', async (topic, message) => {
   try {
     const payload = JSON.parse(message.toString());
+    console.log(`[MQTT] Received message on ${topic}:`, payload);
 
     if (topic === MQTT_TOPIC_SENSOR) {
       const {
