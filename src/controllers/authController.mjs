@@ -75,7 +75,8 @@ export const registerUser = async (req, res, next) => {
     //checking first if the employee to be registered as Watermonitor exists
     const employee = await Employee.findOne({email})
 
-    if(!employee) {
+    if(employee === null ) {
+      console.log("No employee found with email:", email);
       return res.status(400).json({status: "failed:", message: "No employee found with the provided email"})
     }
 
