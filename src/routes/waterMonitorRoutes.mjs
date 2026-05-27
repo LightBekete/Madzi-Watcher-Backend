@@ -14,19 +14,19 @@ import {
 const router = express.Router();
 
 // Get all users (admin only)
-router.get('/', authenticateJWT, checkRole(['admin','superAdmin','officer']), getAllUsers);
+router.get('/', authenticateJWT, checkRole(['admin','superadmin','officer']), getAllUsers);
 // Get logged-in user's profile
 router.get('/me/profile', authenticateJWT, getMyProfile);
 // Get a specific user by ID (admin or provider)
-router.get('/:id', authenticateJWT, checkRole(['admin','superAdmin','officer']), getUserById);
+router.get('/:id', authenticateJWT, checkRole(['admin','superadmin','officer']), getUserById);
 
 // Update user profile (self)
 router.patch('/me/profile', authenticateJWT, updateUserProfile);
 
 // Delete a user (admin only)
-router.delete('/:id', authenticateJWT, checkRole(['admin','superAdmin','officer']), deleteUser);
+router.delete('/:id', authenticateJWT, checkRole(['admin','superadmin','officer']), deleteUser);
 
 // Promote a user (admin only)
-router.patch('/:id/promote', authenticateJWT, checkRole(['admin','superAdmin']), promoteUser);
+router.patch('/:id/promote', authenticateJWT, checkRole(['admin','superadmin']), promoteUser);
 
 export default router;
