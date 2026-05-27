@@ -1600,24 +1600,31 @@ export const getTrendLine = async (req, res, next) => {
 
     const dateFilter = buildDateFilter(period, startDate, endDate);
 
+    // Dynamic grouping based on period
+    const groupIdMap = {
+      today:        { $hour: "$createdAt" },
+      this_month:   { $dayOfMonth: "$createdAt" },
+      this_year:    { $month: "$createdAt" },
+      last_7_days:  { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+      last_30_days: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+      all:          { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+    };
+
+    const groupId = groupIdMap[period] ?? groupIdMap['last_30_days'];
+
     const trends = await WaterQualityData.aggregate([
       {
         $match: dateFilter
       },
       {
-        // group by day (important for charts)
         $group: {
-          _id: {
-            $dateToString: {
-              format: "%Y-%m-%d",
-              date: "$createdAt"
-            }
-          },
-          pH: { $avg: "$pH" },
-          tds: { $avg: "$tds" },
-          turbidity: { $avg: "$turbidity" },
-          conductivity: { $avg: "$conductivity" },
-          wqi: { $avg: "$waterQualityIndex" }
+          _id: groupId,
+          avgPH:           { $avg: "$pH" },
+          avgTDS:          { $avg: "$tds" },
+          avgTurbidity:    { $avg: "$turbidity" },
+          avgConductivity: { $avg: "$electricalConductivity" }, // ← fixed field name
+          avgWQI:          { $avg: "$waterQualityIndex" },
+          count:           { $sum: 1 }
         }
       },
       {
@@ -1626,12 +1633,13 @@ export const getTrendLine = async (req, res, next) => {
       {
         $project: {
           _id: 0,
-          date: "$_id",
-          pH: { $round: ["$pH", 2] },
-          tds: { $round: ["$tds", 0] },
-          turbidity: { $round: ["$turbidity", 2] },
-          conductivity: { $round: ["$conductivity", 0] },
-          wqi: { $round: ["$wqi", 1] }
+          date:            { $toString: "$_id" }, // always string → "7", "14", "2025-05-27"
+          avgPH:           { $round: ["$avgPH", 2] },
+          avgTDS:          { $round: ["$avgTDS", 0] },
+          avgTurbidity:    { $round: ["$avgTurbidity", 2] },
+          avgConductivity: { $round: ["$avgConductivity", 0] },
+          avgWQI:          { $round: ["$avgWQI", 1] },
+          count:           1
         }
       }
     ]);
