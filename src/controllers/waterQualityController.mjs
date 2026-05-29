@@ -2,6 +2,8 @@ import WaterQualityData from "../models/WaterQualityData.mjs";
 import { buildDateFilter } from "../utils/dateFilters.mjs";
 
 
+
+
 /*
 |--------------------------------------------------------------------------
 | getDashboardStatistics
@@ -1592,62 +1594,75 @@ export const getTreatmentPlantStatistics = async (req, res, next) => {
 
 export const getTrendLine = async (req, res, next) => {
   try {
-    const {
-      period = 'last_30_days',
-      startDate,
-      endDate
-    } = req.query;
+    const { period = 'last_30_days' } = req.query;
 
-    const dateFilter = buildDateFilter(period, startDate, endDate);
+    const dateFilter = buildDateFilter(period);
 
-    // Dynamic grouping based on period
-    const groupIdMap = {
-      today:        { $hour: "$createdAt" },
-      this_month:   { $dayOfMonth: "$createdAt" },
-      this_year:    { $month: "$createdAt" },
-      last_7_days:  { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-      last_30_days: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-      all:          { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
-    };
+    let groupId;
 
-    const groupId = groupIdMap[period] ?? groupIdMap['last_30_days'];
+    switch (period) {
+      case 'today':
+        // Convert to local time (CAT = UTC+2)
+        groupId = {
+          $hour: { 
+            $dateAdd: { 
+              startDate: "$createdAt", 
+              unit: "hour", 
+              amount: 2   // Adjust if your timezone offset changes
+            } 
+          }
+        };
+        break;
+
+      case 'last_7_days':
+      case 'last_30_days':
+        groupId = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+        break;
+
+      case 'this_month':
+        groupId = { $dayOfMonth: "$createdAt" };
+        break;
+
+      case 'this_year':
+        groupId = { $month: "$createdAt" };
+        break;
+
+      default:
+        groupId = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+    }
 
     const trends = await WaterQualityData.aggregate([
-      {
-        $match: dateFilter
-      },
+      { $match: dateFilter },
       {
         $group: {
           _id: groupId,
-          avgPH:           { $avg: "$pH" },
-          avgTDS:          { $avg: "$tds" },
-          avgTurbidity:    { $avg: "$turbidity" },
-          avgConductivity: { $avg: "$electricalConductivity" }, // ← fixed field name
-          avgWQI:          { $avg: "$waterQualityIndex" },
-          count:           { $sum: 1 }
+          avgPH: { $avg: "$pH" },
+          avgTDS: { $avg: "$tds" },
+          avgTurbidity: { $avg: "$turbidity" },
+          avgConductivity: { $avg: "$electricalConductivity" },
+          avgWQI: { $avg: "$waterQualityIndex" },
+          count: { $sum: 1 }
         }
       },
-      {
-        $sort: { _id: 1 }
-      },
+      { $sort: { _id: 1 } },
       {
         $project: {
-          _id: 0,
-          date:            { $toString: "$_id" }, // always string → "7", "14", "2025-05-27"
-          avgPH:           { $round: ["$avgPH", 2] },
-          avgTDS:          { $round: ["$avgTDS", 0] },
-          avgTurbidity:    { $round: ["$avgTurbidity", 2] },
+          date: { $toString: "$_id" },
+          avgPH: { $round: ["$avgPH", 2] },
+          avgTDS: { $round: ["$avgTDS", 0] },
+          avgTurbidity: { $round: ["$avgTurbidity", 2] },
           avgConductivity: { $round: ["$avgConductivity", 0] },
-          avgWQI:          { $round: ["$avgWQI", 1] },
-          count:           1
+          avgWQI: { $round: ["$avgWQI", 1] },
+          count: 1
         }
       }
     ]);
 
+    const filledData = fillMissingBuckets(trends, period);
+
     return res.status(200).json({
       status: "success",
-      message: "Trend line data fetched successfully",
-      data: trends
+      data: filledData
     });
 
   } catch (error) {
@@ -1718,3 +1733,191 @@ export const getWQIClassification = async (req, res, next) => {
         next(error);
     }
 };
+
+
+// =============== helper functions ===============
+
+/**
+ * Fills missing time buckets with null values to ensure continuous trend lines
+ * and consistent x-axis display.
+ */
+
+function fillMissingBuckets(data, period) {
+  const result = [];
+  const now = new Date();
+
+switch (period) {
+    case 'today':
+      for (let i = 0; i < 24; i++) {
+        const hourStr = i.toString().padStart(2, '0');
+        const existing = data.find(d => parseInt(d.date) === i);
+        
+        result.push(existing || {
+          date: hourStr,
+          avgPH: null,
+          avgTDS: null,
+          avgTurbidity: null,
+          avgConductivity: null,
+          avgWQI: null,
+          count: 0
+        });
+      }
+      break;
+
+    case 'last_7_days':
+    case 'last_30_days':
+      const days = period === 'last_7_days' ? 7 : 30;
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+
+        const existing = data.find(item => item.date === dateStr);
+        result.push(existing || {
+          date: dateStr,
+          avgPH: null,
+          avgTDS: null,
+          avgTurbidity: null,
+          avgConductivity: null,
+          avgWQI: null,
+          count: 0
+        });
+      }
+      break;
+
+    case 'this_month':
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        const existing = data.find(item => 
+          item.date === day.toString() || item.date === dateStr
+        );
+
+        result.push(existing || {
+          date: day.toString(),
+          avgPH: null,
+          avgTDS: null,
+          avgTurbidity: null,
+          avgConductivity: null,
+          avgWQI: null,
+          count: 0
+        });
+      }
+      break;
+
+    case 'this_year':
+      for (let month = 1; month <= 12; month++) {
+        const existing = data.find(d => parseInt(d.date) === month);
+        result.push(existing || {
+          date: month.toString(),
+          avgPH: null,
+          avgTDS: null,
+          avgTurbidity: null,
+          avgConductivity: null,
+          avgWQI: null,
+          count: 0
+        });
+      }
+      break;
+
+    default:
+      return data;
+  }
+
+  return result;
+}
+
+// function fillMissingBuckets(data, period) {
+//   const result = [];
+//   const now = new Date();
+
+//   switch (period) {
+//     case 'today':
+//       // Hours 0 to 23
+//       for (let i = 0; i < 24; i++) {
+//         const existing = data.find(d => parseInt(d.date) === i);
+//         result.push(existing || {
+//           date: i.toString(),
+//           avgPH: null,
+//           avgTDS: null,
+//           avgTurbidity: null,
+//           avgConductivity: null,
+//           avgWQI: null,
+//           count: 0
+//         });
+//       }
+//       break;
+
+//     case 'last_7_days':
+//     case 'last_30_days':
+//       const days = period === 'last_7_days' ? 7 : 30;
+//       for (let i = days - 1; i >= 0; i--) {
+//         const d = new Date();
+//         d.setDate(d.getDate() - i);
+//         const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+
+//         const existing = data.find(item => item.date === dateStr);
+//         result.push(existing || {
+//           date: dateStr,
+//           avgPH: null,
+//           avgTDS: null,
+//           avgTurbidity: null,
+//           avgConductivity: null,
+//           avgWQI: null,
+//           count: 0
+//         });
+//       }
+//       break;
+
+//     case 'this_month':
+//       const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      
+//       for (let day = 1; day <= daysInMonth; day++) {
+//         const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+//         const existing = data.find(item => {
+//           // Handle both "15" and "2025-05-15" formats from backend
+//           return item.date === day.toString() || item.date === dateStr;
+//         });
+
+//         result.push(existing || {
+//           date: day.toString(),           // Keep simple day number for this_month
+//           avgPH: null,
+//           avgTDS: null,
+//           avgTurbidity: null,
+//           avgConductivity: null,
+//           avgWQI: null,
+//           count: 0
+//         });
+//       }
+//       break;
+
+//     case 'this_year':
+//       const months = [
+//         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+//         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+//       ];
+
+//       for (let month = 1; month <= 12; month++) {
+//         const existing = data.find(d => parseInt(d.date) === month);
+        
+//         result.push(existing || {
+//           date: month.toString(),
+//           avgPH: null,
+//           avgTDS: null,
+//           avgTurbidity: null,
+//           avgConductivity: null,
+//           avgWQI: null,
+//           count: 0
+//         });
+//       }
+//       break;
+
+//     default:
+//       // Fallback - return original data
+//       return data;
+//   }
+
+//   return result;
+// }
